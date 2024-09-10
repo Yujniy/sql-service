@@ -19,12 +19,16 @@ def submit():
 
     with open(sql_path, 'w', encoding='utf-8') as f:
         # Создание таблицы
+        f.write(f"DROP TABLE IF EXISTS mytable;\n")
         f.write(f"CREATE TABLE IF NOT EXISTS mytable ({', '.join([f'{col} TEXT' for col in columns])});\n")
 
         # Вставка данных
         for row in rows:
             values = ', '.join([f"'{value}'" for value in row])
             f.write(f"INSERT INTO mytable ({', '.join(columns)}) VALUES ({values});\n")
+
+        # Добавление запроса для отображения содержимого таблицы
+        f.write("SELECT * FROM mytable;\n")
 
     return jsonify({"message": "Данные успешно сохранены", "file_url": f"/download/database.sql"}), 200
 
