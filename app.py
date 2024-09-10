@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, render_template, send_file, after_this_request
-import sqlite3
 import os
 import tempfile
 
@@ -15,25 +14,19 @@ def submit():
     columns = [f"col_{i}" for i in range(len(data[0]))]
     rows = data
 
-    # Создание временного файла базы данных с фиксированным именем
-    db_path = os.path.join(tempfile.gettempdir(), 'database.db')
+    # Создание временного файла SQL с фиксированным именем
+    sql_path = os.path.join(tempfile.gettempdir(), 'database.sql')
 
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    with open(sql_path, 'w', encoding='utf-8') as f:
+        # Создание таблицы
+        f.write(f"CREATE TABLE IF NOT EXISTS mytable ({', '.join([f'{col} TEXT' for col in columns])});\n")
 
-    # Создание таблицы
-    cursor.execute(f"CREATE TABLE IF NOT EXISTS mytable ({', '.join([f'{col} TEXT' for col in columns])})")
+        # Вставка данных
+        for row in rows:
+            values = ', '.join([f"'{value}'" for value in row])
+            f.write(f"INSERT INTO mytable ({', '.join(columns)}) VALUES ({values});\n")
 
-    # Очистка таблицы
-    cursor.execute("DELETE FROM mytable")
-
-    # Вставка данных
-    cursor.executemany(f"INSERT INTO mytable ({', '.join(columns)}) VALUES ({', '.join(['?' for _ in columns])})", rows)
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Данные успешно сохранены", "file_url": f"/download/database.db"}), 200
+    return jsonify({"message": "Данные успешно сохранены", "file_url": f"/download/database.sql"}), 200
 
 @app.route('/download/<filename>')
 def download_file(filename):
