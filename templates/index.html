@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handsontable Приложение</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #hot-app {
+            width: 600px;
+            margin-bottom: 20px;
+            margin-left: 330px; /* Сдвиг таблицы правее */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="hot-app"></div>
+    <button id="convert-to-sql">Конвертировать в SQL</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('hot-app');
+            const data = [
+                ['', '', '', '', ''],
+                ['', '', '', '', ''],
+                ['', '', '', '', ''],
+                ['', '', '', '', '']
+            ];
+
+            const hot = new Handsontable(container, {
+                data: data,
+                rowHeaders: true,
+                colHeaders: true,
+                height: 'auto',
+                licenseKey: 'non-commercial-and-evaluation',
+                contextMenu: {
+                    items: {
+                        'row_above': {
+                            name: 'Вставить строку выше'
+                        },
+                        'row_below': {
+                            name: 'Вставить строку ниже'
+                        },
+                        'col_left': {
+                            name: 'Вставить столбец слева'
+                        },
+                        'col_right': {
+                            name: 'Вставить столбец справа'
+                        },
+                        'remove_row': {
+                            name: 'Удалить строку'
+                        },
+                        'remove_col': {
+                            name: 'Удалить столбец'
+                        },
+                        'undo': {
+                            name: 'Отменить'
+                        },
+                        'redo': {
+                            name: 'Повторить'
+                        }
+                    }
+                },
+                afterChange: function(changes) {
+                    if (changes) {
+                        console.log('Данные изменены:', hot.getData());
+                    }
+                }
+            });
+
+            document.getElementById('convert-to-sql').addEventListener('click', function() {
+                const data = hot.getData();
+                fetch('/api/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: data })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log(result.message);
+                    const link = document.createElement('a');
+                    link.href = result.file_url;
+                    link.download = 'database.db';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
